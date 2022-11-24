@@ -1,6 +1,6 @@
 # Todo List X MVC with React
 
-![image](https://github.com/21Jasper12/Alpha-Shop-React/blob/main/public/image/image-total-hm.jpg)
+![image](https://github.com/21Jasper12/Todolist-React/blob/main/public/image/todolist.jpg)
 
 ## 介紹
 ---
