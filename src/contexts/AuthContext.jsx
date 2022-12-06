@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     async function checkTokenIsValid() {
       const authToken = localStorage.getItem('authToken');
-      console.log(pathname)
 
       if (!authToken) {
         setIsAuthenticated(false)
