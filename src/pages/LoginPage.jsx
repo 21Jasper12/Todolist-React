@@ -52,6 +52,7 @@ const LoginPage = () => {
         icon: 'error',
         showConfirmButton: false,
       });
+      setPassword('')
       return;
     }
   }
