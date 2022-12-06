@@ -45,6 +45,7 @@ const LoginPage = () => {
       });
       return;
     } else {
+      setPassword('')
       Swal.fire({
         position: 'top',
         title: '登入失敗！',
@@ -52,7 +53,6 @@ const LoginPage = () => {
         icon: 'error',
         showConfirmButton: false,
       });
-      setPassword('')
       return;
     }
   }
