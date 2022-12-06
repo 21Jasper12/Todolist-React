@@ -1,149 +1,231 @@
 import { Footer, Header, TodoCollection, TodoInput } from 'components';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getTodos, createTodo, patchTodo, deleteTodo } from './../api/todos';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from 'contexts/AuthContext';
+import Swal from 'sweetalert2';
 
-const dummyTodos = [
-  {
-    title: 'Learn react-router',
-    isDone: true,
-    id: 1,
-  },
-  {
-    title: 'Learn to create custom hooks',
-    isDone: false,
-    id: 2,
-  },
-  {
-    title: 'Learn to use context',
-    isDone: true,
-    id: 3,
-  },
-  {
-    title: 'Learn to implement auth',
-    isDone: false,
-    id: 4,
-  },
-];
+// 串接後端API就可以把這段刪除
+// const dummyTodos = [
+//   {
+//     title: 'Learn react-router',
+//     isDone: true,
+//     id: 1,
+//   },
+//   {
+//     title: 'Learn to create custom hooks',
+//     isDone: false,
+//     id: 2,
+//   },
+//   {
+//     title: 'Learn to use context',
+//     isDone: true,
+//     id: 3,
+//   },
+//   {
+//     title: 'Learn to implement auth',
+//     isDone: false,
+//     id: 4,
+//   },
+// ];
 
 const TodoPage = () => {
-  const [inputValue, setInputValue] = useState('')
-  const [todos, setTodos] = useState(dummyTodos)
+  const [inputValue, setInputValue] = useState('');
+  const [todos, setTodos] = useState([]);
+  const navigate = useNavigate();
+
+  const { isAuthenticated, currentMember } = useAuth(); // 取出需要的狀態與方法
 
   function handleChange(value) {
     setInputValue(value);
   }
 
-  function handleAddTodo() {
-    if (inputValue.trim().length === 0) {
-      return;
-    }
-    setTodos((prevTodos) => {
-      return [
-        ...prevTodos,
-        {
-          id: Math.random() * 100,
-          title: inputValue,
-          isDone: false,
-        },
-      ];
-    });
-    setInputValue('');
-  };
+  async function handleAddTodo() {
+    try {
+      if (inputValue.trim().length === 0) {
+        Swal.fire({
+          position: 'top',
+          title: '請勿空白！',
+          timer: 1000,
+          icon: 'warning',
+          showConfirmButton: false,
+        });
 
-  function handleKeyDown(){
+        setInputValue('');
+        return;
+      }
+
+      const data = await createTodo({
+        title: inputValue.trim(),
+        isDone: false,
+      });
+      setTodos((prevTodos) => {
+        return [
+          ...prevTodos,
+          {
+            id: data.id,
+            title: data.title,
+            isDone: data.isDone,
+            isEdit: false,
+          },
+        ];
+      });
+
+      setInputValue('');
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleKeyDown() {
     if (inputValue.trim().length === 0) {
+      Swal.fire({
+        position: 'top',
+        title: '請勿空白！',
+        timer: 1000,
+        icon: 'warning',
+        showConfirmButton: false,
+      });
+
+      setInputValue('')
       return;
     }
+
+    const data = await createTodo({
+      title: inputValue.trim(),
+      isDone: false,
+    });
     setTodos((prevTodos) => {
       return [
         ...prevTodos,
         {
-          id: Math.random() * 100,
-          title: inputValue,
-          isDone: false,
+          id: data.id,
+          title: data.title,
+          isDone: data.isDone,
+          isEdit: false,
         },
       ];
     });
+
     setInputValue('');
   }
 
-  function handleToggleDone(id) {
+  async function handleToggleDone(id) {
+    const currentTodo = todos.find((todo) => todo.id === id);
+
+    await patchTodo({
+      id,
+      isDone: !currentTodo.isDone,
+    });
+
     setTodos((prevTodos) => {
       return prevTodos.map((todo) => {
-        if(todo.id === id){
-          return{
+        if (todo.id === id) {
+          return {
             ...todo,
-            isDone: !todo.isDone
-          }
+            isDone: !todo.isDone,
+          };
+        } else {
+          return todo;
         }
-        else{
-          return todo
-        }
-      })
-    })
+      });
+    });
   }
 
-  function handleDelete(id) {
+  async function handleDelete(id) {
+    await deleteTodo(id);
+
     setTodos((prevTodos) => {
-      return prevTodos.filter((todo) => todo.id !== id)
-    })
+      return prevTodos.filter((todo) => todo.id !== id);
+    });
   }
 
   function handleChangeMode({ id, isEdit }) {
     setTodos((prevTodos) => {
       return prevTodos.map((todo) => {
-        if(todo.id === id){
+        if (todo.id === id) {
           return {
             ...todo,
             isEdit,
-          }
-        }
-        else{
+          };
+        } else {
           return {
             ...todo,
-            isEdit: false
-          }
+            isEdit: false,
+          };
         }
-      })
-    })
+      });
+    });
   }
 
-  function handleSave({ id, title }){
+  async function handleSave({ id, title }) {
+    await patchTodo({
+      id,
+      title,
+    });
+
     setTodos((prevTodos) => {
       return prevTodos.map((todo) => {
-        if(todo.id === id){
-          return{
+        if (todo.id === id) {
+          return {
             ...todo,
             title,
-            isEdit: false 
-          }
+            isEdit: false,
+          };
+        } else {
+          return todo;
         }
-        else{
-          return todo
-        }
-      })
-    })
+      });
+    });
   }
+
+  // 用useEffect串接API拿todos資料
+  useEffect(() => {
+    async function getTodosAsync() {
+      const todos = await getTodos();
+
+      setTodos(
+        todos.map((todo) => {
+          return {
+            ...todo,
+            isEdit: false,
+          };
+        }),
+      );
+    }
+
+    getTodosAsync();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [navigate, isAuthenticated]);
 
   return (
     <div>
-      TodoPage
-      <Header />
+      <div
+        onClick={() => console.log('test')}
+      >
+        <h1>TodoPage</h1>
+      </div>
+
+      <Header userName={currentMember?.name} />
       <TodoInput
         inputValue={inputValue}
         onChange={handleChange}
         onAddTodo={handleAddTodo}
         onKeyDown={handleKeyDown}
       />
-      <TodoCollection 
-        todos={todos} 
+      <TodoCollection
+        todos={todos}
         onToggleDone={handleToggleDone}
         onChangeMode={handleChangeMode}
         onSave={handleSave}
         onDelete={handleDelete}
       />
-      <Footer 
-        todos={todos}
-      />
+      <Footer todos={todos} />
     </div>
   );
 };

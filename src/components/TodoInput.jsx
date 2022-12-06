@@ -68,6 +68,7 @@ const StyledAddTodoActionContainer = styled.div`
     }
   }
 `;
+
 const TodoInput = ({ inputValue, onChange, onKeyDown, onAddTodo }) => {
   return (
     <StyledAddTodoContainer
